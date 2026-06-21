@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entropy Calculator</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --text: #e7ecf3;
+      --muted: #9aa7b8;
+      --border: #2d3a4d;
+      --bad: #e05252;
+      --poor: #e07a52;
+      --weak: #d4a017;
+      --good: #4caf7d;
+      --excellent: #3b82f6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1rem 3rem;
+    }
+
+    h1 {
+      margin: 0 0 0.5rem;
+      font-size: 1.75rem;
+    }
+
+    p.lead {
+      margin: 0 0 2rem;
+      color: var(--muted);
+    }
+
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    h2 {
+      margin: 0 0 1rem;
+      font-size: 1.1rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.35rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #111822;
+      color: var(--text);
+      font: inherit;
+    }
+
+    textarea {
+      min-height: 5rem;
+      resize: vertical;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 1px solid var(--border);
+      background: #243044;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.55rem 0.9rem;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #2c3a52;
+    }
+
+    button.secondary {
+      background: transparent;
+    }
+
+    .meter {
+      height: 10px;
+      border-radius: 999px;
+      background: #111822;
+      overflow: hidden;
+      margin: 1rem 0 0.75rem;
+    }
+
+    .meter-fill {
+      height: 100%;
+      width: 0%;
+      transition: width 0.2s ease, background-color 0.2s ease;
+      background: var(--muted);
+    }
+
+    .results {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+    }
+
+    .stat {
+      background: #111822;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-value {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .word-list {
+      margin: 0.75rem 0 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .word-list li {
+      background: #111822;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.2rem 0.65rem;
+      font-size: 0.85rem;
+    }
+
+    .hint {
+      margin-top: 0.5rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .status {
+      margin-top: 1rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 560px) {
+      .results {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Entropy Calculator</h1>
+    <p class="lead">KeePassXC-compatible password entropy (C zxcvbn via WASM). Extend the custom dictionary to flag site-specific words as guessable.</p>
+
+    <section>
+      <h2>Password</h2>
+      <label for="password">Enter a password</label>
+      <input id="password" type="text" autocomplete="off" spellcheck="false" placeholder="Type a password...">
+
+      <div class="meter" aria-hidden="true">
+        <div id="password-meter" class="meter-fill"></div>
+      </div>
+
+      <div class="results">
+        <div class="stat">
+          <div class="stat-label">Entropy</div>
+          <div id="password-bits" class="stat-value">-</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Quality</div>
+          <div id="password-quality" class="stat-value">-</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Score</div>
+          <div id="password-score" class="stat-value">-</div>
+        </div>
+      </div>
+      <p class="hint">Score equals entropy in bits, matching KeePassXC PasswordHealth.</p>
+    </section>
+
+    <section>
+      <h2>Custom dictionary</h2>
+      <label for="custom-words">Add words (space or comma separated)</label>
+      <textarea id="custom-words" placeholder="hashkit, companyname, projectcodename"></textarea>
+      <div class="actions">
+        <button id="add-words" type="button">Add words</button>
+        <button id="clear-words" class="secondary" type="button">Clear dictionary</button>
+      </div>
+      <p class="hint">Added words are treated as guessable. Passwords containing them will score lower.</p>
+      <ul id="word-list" class="word-list"></ul>
+    </section>
+
+    <p id="status" class="status">Loading WASM module...</p>
+  </main>
+
+  <script type="module">
+    import init, {
+      analyze_password,
+      add_words,
+      set_words,
+      clear_words,
+      dictionary_words,
+      Quality,
+    } from './pkg/entropy_calc.js';
+
+    const STORAGE_KEY = 'entropyCalcCustomWords';
+
+    const qualityNames = ['Bad', 'Poor', 'Weak', 'Good', 'Excellent'];
+    const qualityColors = {
+      [Quality.Bad]: 'var(--bad)',
+      [Quality.Poor]: 'var(--poor)',
+      [Quality.Weak]: 'var(--weak)',
+      [Quality.Good]: 'var(--good)',
+      [Quality.Excellent]: 'var(--excellent)',
+    };
+
+    const passwordInput = document.getElementById('password');
+    const customWordsInput = document.getElementById('custom-words');
+    const wordList = document.getElementById('word-list');
+    const status = document.getElementById('status');
+
+    function parseWords(text) {
+      return text
+        .split(/[\s,]+/)
+        .map((word) => word.trim())
+        .filter(Boolean);
+    }
+
+    function persistWords() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dictionary_words()));
+    }
+
+    function renderWordList() {
+      const words = dictionary_words();
+      wordList.replaceChildren(
+        ...words.map((word) => {
+          const item = document.createElement('li');
+          item.textContent = word;
+          return item;
+        }),
+      );
+    }
+
+    function renderStrength(result) {
+      const qualityName = qualityNames[result.quality] ?? 'Unknown';
+      const fill = Math.max(0, Math.min(100, (result.entropy_bits / 120) * 100));
+
+      document.getElementById('password-bits').textContent = `${result.entropy_bits.toFixed(2)} bits`;
+      document.getElementById('password-quality').textContent = qualityName;
+      document.getElementById('password-score').textContent = result.score.toFixed(2);
+
+      const meter = document.getElementById('password-meter');
+      meter.style.width = `${fill}%`;
+      meter.style.backgroundColor = qualityColors[result.quality] ?? 'var(--muted)';
+    }
+
+    function analyzeCurrentPassword() {
+      const value = passwordInput.value;
+      if (!value) {
+        renderStrength({ entropy_bits: 0, quality: Quality.Bad, score: 0 });
+        return;
+      }
+      renderStrength(analyze_password(value));
+    }
+
+    function loadSavedWords() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        if (Array.isArray(saved)) {
+          set_words(saved.filter((word) => typeof word === 'string'));
+        }
+      } catch {
+        clear_words();
+      }
+      renderWordList();
+    }
+
+    document.getElementById('add-words').addEventListener('click', () => {
+      const words = parseWords(customWordsInput.value);
+      if (words.length === 0) {
+        return;
+      }
+      add_words(words);
+      customWordsInput.value = '';
+      persistWords();
+      renderWordList();
+      analyzeCurrentPassword();
+    });
+
+    document.getElementById('clear-words').addEventListener('click', () => {
+      clear_words();
+      persistWords();
+      renderWordList();
+      analyzeCurrentPassword();
+    });
+
+    passwordInput.addEventListener('input', analyzeCurrentPassword);
+
+    try {
+      await init();
+      loadSavedWords();
+      analyzeCurrentPassword();
+      status.textContent = 'Ready. Serve this folder over HTTP after running wasm-pack build --target web.';
+    } catch (error) {
+      status.textContent = `Failed to load WASM: ${error.message}. Run wasm-pack build --target web in entropy-calc/.`;
+      console.error(error);
+    }
+  </script>
+</body>
+</html>

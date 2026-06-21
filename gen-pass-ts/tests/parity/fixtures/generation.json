@@ -1,0 +1,62 @@
+[
+  {
+    "name": "every-group-shuffle",
+    "config": {
+      "length": 8,
+      "classes": 7,
+      "flags": 3,
+      "customCharset": "",
+      "excludedCharset": ""
+    },
+    "randomU32": [100, 200, 50, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500],
+    "expectedPassword": "4NDymsFa"
+  },
+  {
+    "name": "excluded-vowels",
+    "config": {
+      "length": 16,
+      "classes": 1,
+      "flags": 0,
+      "customCharset": "",
+      "excludedCharset": "aeiou"
+    },
+    "randomU32": [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160],
+    "expectedPassword": "nzmylxkwjvhtgsfr"
+  },
+  {
+    "name": "simple-no-flags",
+    "config": {
+      "length": 5,
+      "classes": 7,
+      "flags": 0,
+      "customCharset": "",
+      "excludedCharset": ""
+    },
+    "randomU32": [3, 6, 9, 12, 15],
+    "expectedPassword": "dgjmp"
+  },
+  {
+    "name": "custom-and-eascii",
+    "config": {
+      "length": 12,
+      "classes": 1031,
+      "flags": 3,
+      "customCharset": "++",
+      "excludedCharset": ""
+    },
+    "randomU32": [5, 15, 25, 35, 45, 55, 65, 75, 85, 95, 105, 115, 125, 135, 145, 155, 165, 175, 185, 195, 205, 215, 225, 235, 245, 255, 265, 275, 285, 295],
+    "expectedPassword": "Y7JTmwfU3h+b"
+  },
+  {
+    "name": "invalid-config",
+    "config": {
+      "length": 1,
+      "classes": 3,
+      "flags": 2,
+      "customCharset": "",
+      "excludedCharset": ""
+    },
+    "randomU32": [],
+    "expectError": true
+  }
+]

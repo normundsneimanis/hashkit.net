@@ -1,0 +1,67 @@
+[
+  {
+    "name": "default-charset-groups",
+    "request": {
+      "action": "groups",
+      "config": {
+        "length": 32,
+        "classes": 7,
+        "flags": 3,
+        "custom_charset": "",
+        "excluded_charset": ""
+      }
+    }
+  },
+  {
+    "name": "lookalike-custom-excluded-groups",
+    "request": {
+      "action": "groups",
+      "config": {
+        "length": 8,
+        "classes": 1031,
+        "flags": 1,
+        "custom_charset": "++",
+        "excluded_charset": "0"
+      }
+    }
+  },
+  {
+    "name": "flatten-charset-exclude-zero",
+    "request": {
+      "action": "charset",
+      "config": {
+        "length": 0,
+        "classes": 3,
+        "flags": 1,
+        "custom_charset": "",
+        "excluded_charset": "0"
+      }
+    }
+  },
+  {
+    "name": "invalid-too-short-for-every-group",
+    "request": {
+      "action": "valid",
+      "config": {
+        "length": 1,
+        "classes": 3,
+        "flags": 2,
+        "custom_charset": "",
+        "excluded_charset": ""
+      }
+    }
+  },
+  {
+    "name": "braces-only-charset",
+    "request": {
+      "action": "charset",
+      "config": {
+        "length": 8,
+        "classes": 8,
+        "flags": 0,
+        "custom_charset": "",
+        "excluded_charset": ""
+      }
+    }
+  }
+]

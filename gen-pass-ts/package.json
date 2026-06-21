@@ -1,0 +1,18 @@
+{
+  "name": "gen-pass-ts",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "vitest run",
+    "test:parity": "vitest run tests/parity",
+    "build:parity-cli": "cargo build --manifest-path tools/parity-ref/Cargo.toml --bin parity-cli --target-dir tools/parity-ref/target && test -x tools/parity-ref/target/debug/parity-cli",
+    "build:browser": "esbuild src/browser.ts --bundle --format=esm --outfile=../dist/app.js --platform=browser"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "esbuild": "^0.24.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

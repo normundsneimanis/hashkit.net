@@ -1,0 +1,8 @@
+pkg/
+dist/
+_site/
+
+# Rust / WASM
+entropy-calc/target/
+entropy-calc/pkg/
+gen-pass-ts/tools/parity-ref/target/

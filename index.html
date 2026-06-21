@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Generator</title>
+  <style>
+    :root,
+    [data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --input-bg: #111822;
+      --text: #e7ecf3;
+      --muted: #9aa7b8;
+      --border: #2d3a4d;
+      --accent: #3b82f6;
+      --btn-bg: #243044;
+      --meter-bad: #dc2626;
+      --meter-poor: #ef4444;
+      --meter-weak: #eab308;
+      --meter-good: #4caf7d;
+      --meter-excellent: #22c55e;
+      --pill-bg: #111822;
+      --pill-active-bg: rgba(59, 130, 246, 0.18);
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+
+    [data-theme="light"] {
+      color-scheme: light;
+      --bg: #f0f2f5;
+      --panel: #ffffff;
+      --input-bg: #f8f9fb;
+      --text: #1a2332;
+      --muted: #64748b;
+      --border: #cbd5e1;
+      --accent: #2563eb;
+      --btn-bg: #e2e8f0;
+      --meter-bad: #dc2626;
+      --meter-poor: #ef4444;
+      --meter-weak: #ca8a04;
+      --meter-good: #16a34a;
+      --meter-excellent: #15803d;
+      --pill-bg: #f1f5f9;
+      --pill-active-bg: rgba(37, 99, 235, 0.12);
+      --shadow: rgba(0, 0, 0, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    main {
+      max-width: min(1100px, 100%);
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+    }
+
+    @media (min-width: 1024px) {
+      main { padding: 2rem 2rem 4rem; }
+    }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .page-header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    @media (min-width: 640px) {
+      .page-header h1 { font-size: 1.75rem; }
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .chrome-btn {
+      font-size: 0.85rem;
+      padding: 0.4rem 0.65rem;
+      border: 1px solid var(--border);
+      background: var(--btn-bg);
+      color: var(--text);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .chrome-btn:hover { border-color: var(--accent); }
+
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .control-primary { margin-bottom: 1.25rem; }
+
+    .password-block {
+      margin-bottom: 1.25rem;
+    }
+
+    .password-field {
+      position: relative;
+      display: flex;
+      align-items: stretch;
+    }
+
+    .password-field input {
+      flex: 1;
+      width: 100%;
+      padding: 0.85rem 3rem 0.85rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--input-bg);
+      color: var(--text);
+      font: 1.25rem ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    @media (min-width: 640px) {
+      .password-field input { font-size: 1.4rem; padding-top: 1rem; padding-bottom: 1rem; }
+    }
+
+    .icon-btn {
+      position: absolute;
+      right: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 2.25rem;
+      height: 2.25rem;
+      padding: 0;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .icon-btn:hover {
+      color: var(--text);
+      border-color: var(--border);
+      background: var(--pill-bg);
+    }
+
+    .icon-btn.copied { color: var(--meter-excellent); }
+
+    .entropy-compact {
+      margin-top: 0.5rem;
+    }
+
+    .meter {
+      height: 3px;
+      border-radius: 999px;
+      background: var(--input-bg);
+      overflow: hidden;
+      margin-bottom: 0.35rem;
+    }
+
+    .meter-fill {
+      height: 100%;
+      width: 0%;
+      transition: width 0.2s ease, background-color 0.2s ease;
+      background: var(--muted);
+    }
+
+    #entropy-summary {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .entropy-stats {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .stat-item {
+      white-space: nowrap;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.35rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .control-primary label {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    input[type="text"],
+    input[type="number"],
+    textarea {
+      width: 100%;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--input-bg);
+      color: var(--text);
+      font: inherit;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .length-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .length-row input[type="number"] {
+      width: 4.5rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .section-label {
+      display: block;
+      margin: 0 0 0.65rem;
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .control-frequent .section-label { font-size: 1rem; }
+
+    .class-checks {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+    }
+
+    @media (min-width: 640px) {
+      .class-checks { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (min-width: 900px) {
+      .class-checks { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .class-chip {
+      display: flex;
+      align-items: stretch;
+      gap: 0.25rem;
+      position: relative;
+    }
+
+    .class-toggle,
+    .class-toggle.custom-static {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      min-height: 2.5rem;
+      padding: 0.45rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--pill-bg);
+      color: var(--text);
+      font-size: 0.95rem;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .class-toggle.custom-static {
+      cursor: default;
+      background: var(--pill-active-bg);
+      border-color: var(--accent);
+    }
+
+    .class-toggle[aria-pressed="true"] {
+      background: var(--pill-active-bg);
+      border-color: var(--accent);
+    }
+
+    .class-toggle-label { font-weight: 500; }
+
+    .class-count {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .class-count.warning { color: var(--meter-poor); }
+
+    .class-menu-btn {
+      width: 2rem;
+      min-width: 2rem;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--pill-bg);
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .class-menu-btn:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    .class-menu-btn[aria-expanded="true"] {
+      background: var(--pill-active-bg);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .charset-summary {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .charset-summary.warning { color: var(--meter-poor); }
+
+    .popover {
+      position: absolute;
+      left: 0;
+      top: calc(100% + 0.35rem);
+      z-index: 20;
+      min-width: min(100%, 320px);
+      max-width: 100%;
+      padding: 0.75rem;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px var(--shadow);
+    }
+
+    .popover-header {
+      display: flex;
+      justify-content: flex-end;
+      margin: -0.25rem -0.25rem 0.5rem 0;
+    }
+
+    .popover-close {
+      width: 1.75rem;
+      height: 1.75rem;
+      padding: 0;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1.25rem;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .popover-close:hover {
+      color: var(--text);
+      border-color: var(--border);
+      background: var(--pill-bg);
+    }
+
+    .panel-actions {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 0.65rem;
+      flex-wrap: wrap;
+    }
+
+    .panel-actions button {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.8rem;
+    }
+
+    .char-tiles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .char-tile {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.95rem;
+      width: 2rem;
+      height: 2rem;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--pill-bg);
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .char-tile.enabled {
+      border-color: var(--accent);
+      background: var(--pill-active-bg);
+    }
+
+    .char-tile.disabled {
+      opacity: 0.45;
+      text-decoration: line-through;
+    }
+
+    .char-tile:hover { border-color: var(--accent); }
+
+    .control-secondary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      margin: 0.75rem 0;
+    }
+
+    .control-secondary label {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .control-secondary input { width: auto; }
+
+    .control-advanced label {
+      font-size: 0.85rem;
+    }
+
+    .control-advanced input {
+      font-size: 0.9rem;
+    }
+
+    .control-advanced h2 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin: 0 0 0.75rem;
+    }
+
+    .control-advanced textarea {
+      min-height: 3rem;
+      font-size: 0.9rem;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 1px solid var(--border);
+      background: var(--btn-bg);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.55rem 0.9rem;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+      font-size: 1.05rem;
+      font-weight: 600;
+      padding: 0.7rem 1.25rem;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button.secondary { background: transparent; }
+
+    .status {
+      margin-top: 0.75rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .word-list {
+      margin: 0.75rem 0 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .word-list li {
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.2rem 0.65rem;
+      font-size: 0.8rem;
+    }
+
+    .dict-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    @media (min-width: 900px) {
+      .dict-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="page-header">
+      <h1>Password Generator</h1>
+      <div class="header-actions">
+        <button id="theme-toggle" class="chrome-btn" type="button" title="Theme: System" aria-label="Theme: System">◐</button>
+        <button id="reset-settings" class="chrome-btn" type="button" title="Reset settings">Reset</button>
+      </div>
+    </header>
+
+    <section>
+      <div class="password-block control-primary">
+        <div class="password-field">
+          <input id="output" type="text" autocomplete="off" spellcheck="false" placeholder="Generated password">
+          <button id="copy-password" class="icon-btn" type="button" aria-label="Copy password">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+              <rect x="6" y="6" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M4 12V4.5A1.5 1.5 0 015.5 3H12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="entropy-compact">
+          <div class="meter" aria-hidden="true">
+            <div id="meter" class="meter-fill"></div>
+          </div>
+          <div class="entropy-stats">
+            <span id="quality-stat" class="stat-item">—</span>
+            <span id="permutations-stat" class="stat-item">—</span>
+            <span id="entropy-stat" class="stat-item">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-primary">
+        <label for="length-slider">Length</label>
+        <div class="length-row">
+          <input type="range" id="length-slider" min="1" max="128" value="32">
+          <input type="number" id="length" min="1" max="128" value="32">
+        </div>
+      </div>
+
+      <div class="control-frequent">
+        <span class="section-label">Character types</span>
+        <p id="charset-summary" class="charset-summary">—</p>
+        <div id="class-checks" class="class-checks"></div>
+      </div>
+
+      <div class="control-secondary">
+        <label><input id="flag-look-alike" type="checkbox"> Exclude look-alike</label>
+        <label><input id="flag-every-group" type="checkbox" checked> Pick from each group</label>
+      </div>
+
+      <div class="control-advanced">
+        <label for="custom-charset">Custom character set</label>
+        <input id="custom-charset" type="text" spellcheck="false" placeholder="Optional extra characters">
+      </div>
+
+      <div class="actions">
+        <button id="generate" class="primary" type="button">Generate</button>
+      </div>
+    </section>
+
+    <section class="control-advanced">
+      <h2>Custom dictionary (entropy scoring)</h2>
+      <div class="dict-grid">
+        <div>
+          <label for="custom-words">Add words (space or comma separated)</label>
+          <textarea id="custom-words" placeholder="hashkit, companyname"></textarea>
+          <div class="actions">
+            <button id="add-words" type="button">Add words</button>
+            <button id="clear-words" class="secondary" type="button">Clear</button>
+          </div>
+        </div>
+        <ul id="word-list" class="word-list"></ul>
+      </div>
+    </section>
+
+    <p id="status" class="status"></p>
+  </main>
+
+  <script type="module" src="./dist/app.js"></script>
+</body>
+</html>

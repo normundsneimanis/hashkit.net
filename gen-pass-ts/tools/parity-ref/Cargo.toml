@@ -1,0 +1,18 @@
+[package]
+name = "parity-ref"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "parity_ref"
+path = "src/lib.rs"
+
+[[bin]]
+name = "parity-cli"
+path = "src/bin/parity-cli.rs"
+
+[dependencies]
+bitflags = "2"
+getrandom = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
