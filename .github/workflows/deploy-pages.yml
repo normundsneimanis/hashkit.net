@@ -30,7 +30,8 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
 
-      - uses: jetli/wasm-pack@v0.4.0
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Build site
         run: chmod +x build.sh && ./build.sh
