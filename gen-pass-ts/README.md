@@ -4,6 +4,8 @@ KeePassXC-compatible password generation in TypeScript.
 
 ## Commands
 
+Use Node 22 (see [`.nvmrc`](../.nvmrc)) when installing deps or updating `package-lock.json` — CI uses Node 22 and `npm ci` requires a matching lockfile.
+
 ```bash
 npm install
 npm run build:parity-cli   # build Rust parity-cli (required for parity tests)
