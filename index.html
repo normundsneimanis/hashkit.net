@@ -198,6 +198,45 @@
       white-space: nowrap;
     }
 
+    .stat-item[title] {
+      cursor: help;
+    }
+
+    .page-footer {
+      max-width: min(1100px, 100%);
+      margin: 0 auto;
+      padding: 0 1rem 2rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    @media (min-width: 1024px) {
+      .page-footer { padding: 0 2rem 2.5rem; }
+    }
+
+    .page-footer p {
+      margin: 0 0 0.5rem;
+    }
+
+    .page-footer p:last-child {
+      margin-bottom: 0;
+    }
+
+    .page-footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .page-footer a:hover {
+      text-decoration: underline;
+    }
+
+    .popover-inactive {
+      opacity: 0.92;
+    }
+
     label {
       display: block;
       margin-bottom: 0.35rem;
@@ -569,9 +608,9 @@
             <div id="meter" class="meter-fill"></div>
           </div>
           <div class="entropy-stats">
-            <span id="quality-stat" class="stat-item">—</span>
-            <span id="permutations-stat" class="stat-item">—</span>
-            <span id="entropy-stat" class="stat-item">—</span>
+            <span id="quality-stat" class="stat-item" title="A simple strength rating (Bad → Excellent) based on the entropy estimate below.">—</span>
+            <span id="permutations-stat" class="stat-item" title="How many different passwords you could make with your current character choices and length. A bigger number means more possible combinations for someone to try.">—</span>
+            <span id="entropy-stat" class="stat-item" title="How strong this password looks against real-world guessing—not just its length, but also dictionary words and common patterns. Shown in bits; higher is stronger.">—</span>
           </div>
         </div>
       </div>
@@ -622,6 +661,14 @@
 
     <p id="status" class="status"></p>
   </main>
+
+  <footer class="page-footer">
+    <p>
+      Hosted on <a href="https://pages.github.com/">GitHub Pages</a>
+      · <a href="https://github.com/normundsneimanis/hashkit.net">Source on GitHub</a>
+    </p>
+    <p>Generator settings are saved in your browser (localStorage). Passwords are never sent to a server.</p>
+  </footer>
 
   <script type="module" src="./dist/app.js"></script>
 </body>

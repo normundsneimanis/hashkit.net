@@ -1,9 +1,8 @@
 import type { ThemeMode } from "./theme.js";
 import type { PasswordConfig } from "../passwordGenerator.js";
+import { DEFAULT_ENABLED } from "./classPopover.js";
 
 export const SETTINGS_KEY = "hashkitPasswordGenSettings";
-
-const DEFAULT_ENABLED = ["LOWER_LETTERS", "UPPER_LETTERS", "NUMBERS"];
 
 export interface SavedSettings {
   length: number;

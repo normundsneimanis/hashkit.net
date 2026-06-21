@@ -17,7 +17,9 @@ export const CLASS_OPTIONS = [
   ["EASCII", "Extended ASCII", CharClass.EASCII] as const,
 ];
 
-const DEFAULT_ENABLED = new Set(["LOWER_LETTERS", "UPPER_LETTERS", "NUMBERS"]);
+export const DEFAULT_ENABLED = CLASS_OPTIONS.map(([key]) => key).filter((k) => k !== "EASCII");
+
+const DEFAULT_ENABLED_SET = new Set(DEFAULT_ENABLED);
 
 const CHEVRON_SVG = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
@@ -110,7 +112,7 @@ export function mountClassPopovers(
       pendingEnabled = null;
     } else if (state.size === 0) {
       for (const [key] of CLASS_OPTIONS) {
-        state.set(key, DEFAULT_ENABLED.has(key));
+        state.set(key, DEFAULT_ENABLED_SET.has(key));
       }
     }
     return state;
@@ -140,6 +142,17 @@ export function mountClassPopovers(
     openClassKey = classKey;
   }
 
+  function ensureClassEnabled(classKey: string) {
+    const toggle = container.querySelector<HTMLButtonElement>(
+      `.class-toggle[data-class="${classKey}"]`,
+    );
+    if (toggle?.getAttribute("aria-pressed") === "true") {
+      return;
+    }
+    pendingEnabled = readEnabledState();
+    pendingEnabled.set(classKey, true);
+  }
+
   function toggleChar(ch: string) {
     if (excludedSet.has(ch)) {
       excludedSet.delete(ch);
@@ -150,7 +163,15 @@ export function mountClassPopovers(
     onChange();
   }
 
-  function setGroupExcluded(chars: readonly string[], excluded: boolean) {
+  function setGroupExcluded(
+    classKey: string,
+    chars: readonly string[],
+    excluded: boolean,
+    classEnabled: boolean,
+  ) {
+    if (!classEnabled || excluded) {
+      ensureClassEnabled(classKey);
+    }
     for (const ch of chars) {
       if (excluded) {
         excludedSet.add(ch);
@@ -162,16 +183,44 @@ export function mountClassPopovers(
     onChange();
   }
 
-  function createCharTile(ch: string): HTMLButtonElement {
+  function includeCharWhenClassOff(
+    classKey: string,
+    ch: string,
+    chars: readonly string[],
+  ) {
+    ensureClassEnabled(classKey);
+    for (const c of chars) {
+      if (c === ch) {
+        excludedSet.delete(c);
+      } else {
+        excludedSet.add(c);
+      }
+    }
+    refresh({ preserveOpen: true });
+    onChange();
+  }
+
+  function createCharTile(
+    classKey: string,
+    ch: string,
+    chars: readonly string[],
+    classEnabled: boolean,
+  ): HTMLButtonElement {
     const tile = document.createElement("button");
     tile.type = "button";
     tile.className = "char-tile";
-    const enabled = !excludedSet.has(ch);
-    tile.classList.add(enabled ? "enabled" : "disabled");
-    tile.title = enabled ? `Click to exclude “${ch}”` : `Click to include “${ch}”`;
+    const charEnabled = classEnabled && !excludedSet.has(ch);
+    tile.classList.add(charEnabled ? "enabled" : "disabled");
+    tile.title = charEnabled
+      ? `Click to exclude “${ch}”`
+      : `Click to include “${ch}”`;
     tile.textContent = ch;
     tile.addEventListener("click", (event) => {
       event.stopPropagation();
+      if (!classEnabled) {
+        includeCharWhenClassOff(classKey, ch, chars);
+        return;
+      }
       toggleChar(ch);
     });
     return tile;
@@ -181,9 +230,13 @@ export function mountClassPopovers(
     classKey: string,
     chars: readonly string[],
     menuBtn: HTMLButtonElement,
+    classEnabled: boolean,
   ): HTMLDivElement {
     const popover = document.createElement("div");
     popover.className = "popover";
+    if (!classEnabled) {
+      popover.classList.add("popover-inactive");
+    }
     popover.hidden = true;
     popover.dataset.class = classKey;
     popover.setAttribute("role", "dialog");
@@ -212,19 +265,25 @@ export function mountClassPopovers(
     const selectAllBtn = document.createElement("button");
     selectAllBtn.type = "button";
     selectAllBtn.textContent = "Select all";
-    selectAllBtn.addEventListener("click", () => setGroupExcluded(chars, false));
+    selectAllBtn.addEventListener("click", () =>
+      setGroupExcluded(classKey, chars, false, classEnabled),
+    );
 
     const deselectAllBtn = document.createElement("button");
     deselectAllBtn.type = "button";
     deselectAllBtn.className = "secondary";
     deselectAllBtn.textContent = "Deselect all";
-    deselectAllBtn.addEventListener("click", () => setGroupExcluded(chars, true));
+    deselectAllBtn.addEventListener("click", () =>
+      setGroupExcluded(classKey, chars, true, classEnabled),
+    );
 
     actions.append(selectAllBtn, deselectAllBtn);
 
     const tiles = document.createElement("div");
     tiles.className = "char-tiles";
-    tiles.append(...chars.map(createCharTile));
+    tiles.append(
+      ...chars.map((ch) => createCharTile(classKey, ch, chars, classEnabled)),
+    );
 
     popover.addEventListener("click", (event) => {
       event.stopPropagation();
@@ -264,7 +323,6 @@ export function mountClassPopovers(
     label: string,
     classFlag: number,
     enabled: boolean,
-    listConfig: PasswordConfig,
   ): HTMLElement {
     const chip = document.createElement("div");
     chip.className = "class-chip";
@@ -303,18 +361,19 @@ export function mountClassPopovers(
 
     chip.append(toggle, menuBtn);
 
-    if (enabled) {
-      const chars = charsForClass(listConfig, classFlag);
-      const enabledCount = chars.filter((ch) => !excludedSet.has(ch)).length;
-      count.textContent = `${enabledCount}/${chars.length}`;
-      count.classList.toggle("warning", enabledCount === 0);
-      menuBtn.hidden = chars.length === 0;
-      if (chars.length > 0) {
-        chip.append(createPopover(classKey, chars, menuBtn));
-      }
-    } else {
-      menuBtn.hidden = true;
-      count.textContent = "";
+    const base = readBaseConfig();
+    const chars = charsForClass(
+      { ...base, classes: classFlag, excludedCharset: "" },
+      classFlag,
+    );
+    const enabledCount = enabled
+      ? chars.filter((ch) => !excludedSet.has(ch)).length
+      : 0;
+    count.textContent = `${enabledCount}/${chars.length}`;
+    count.classList.toggle("warning", enabledCount === 0 && chars.length > 0);
+    menuBtn.hidden = chars.length === 0;
+    if (chars.length > 0) {
+      chip.append(createPopover(classKey, chars, menuBtn, enabled));
     }
 
     return chip;
@@ -351,7 +410,7 @@ export function mountClassPopovers(
     menuBtn.setAttribute("aria-label", "Customize custom characters");
     menuBtn.innerHTML = CHEVRON_SVG;
 
-    chip.append(spacer, menuBtn, createPopover("CUSTOM", chars, menuBtn));
+    chip.append(spacer, menuBtn, createPopover("CUSTOM", chars, menuBtn, true));
     return chip;
   }
 
@@ -374,7 +433,7 @@ export function mountClassPopovers(
 
     container.replaceChildren();
     for (const [key, label, flag] of CLASS_OPTIONS) {
-      container.append(renderChip(key, label, flag, enabledState.get(key) ?? false, listConfig));
+      container.append(renderChip(key, label, flag, enabledState.get(key) ?? false));
     }
 
     const customChip = renderCustomChip(listConfig);
