@@ -59,6 +59,8 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    # Requires github-pages environment to allow tag refs (Settings → Environments →
+    # github-pages → Deployment branches and tags → add Tag rule: v*).
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

@@ -9,6 +9,15 @@ mkdir -p "$ROOT/pkg/entropy-calc"
 cp -R "$ROOT/entropy-calc/pkg/." "$ROOT/pkg/entropy-calc/"
 
 # 2. gen-pass-ts browser bundle → dist/app.js
-(cd "$ROOT/gen-pass-ts" && npm ci && npm run build:browser)
+install_node_deps() {
+  if [ -n "${CI:-}" ]; then
+    npm ci
+  else
+    echo "npm install (local dev; CI uses npm ci)"
+    npm install
+  fi
+}
 
-echo "Serve: cd $ROOT && python3 -m http.server"
+(cd "$ROOT/gen-pass-ts" && install_node_deps && npm run build:browser)
+
+echo "Serve: python3 -m http.server"

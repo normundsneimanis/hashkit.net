@@ -80,6 +80,7 @@ export interface ClassPopoverController {
   refresh(options?: { preserveOpen?: boolean }): void;
   getExcludedSet(): Set<string>;
   setExcludedSet(set: Set<string>): void;
+  setEnabledClasses(classes: string[]): void;
   getEnabledClasses(): string[];
   isClassEnabled(classKey: string): boolean;
 }
@@ -370,7 +371,7 @@ export function mountClassPopovers(
       ? chars.filter((ch) => !excludedSet.has(ch)).length
       : 0;
     count.textContent = `${enabledCount}/${chars.length}`;
-    count.classList.toggle("warning", enabledCount === 0 && chars.length > 0);
+    count.classList.toggle("warning", enabled && enabledCount === 0);
     menuBtn.hidden = chars.length === 0;
     if (chars.length > 0) {
       chip.append(createPopover(classKey, chars, menuBtn, enabled));
@@ -471,6 +472,9 @@ export function mountClassPopovers(
     getExcludedSet: () => excludedSet,
     setExcludedSet: (set: Set<string>) => {
       excludedSet = new Set(set);
+    },
+    setEnabledClasses: (classes: string[]) => {
+      pendingEnabled = new Set(classes);
     },
     getEnabledClasses: () => {
       const state = readEnabledState();

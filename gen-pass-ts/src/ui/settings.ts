@@ -3,6 +3,7 @@ import type { PasswordConfig } from "../passwordGenerator.js";
 import { DEFAULT_ENABLED } from "./classPopover.js";
 
 export const SETTINGS_KEY = "hashkitPasswordGenSettings";
+export const DICT_STORAGE_KEY = "entropyCalcCustomWords";
 
 export interface SavedSettings {
   length: number;
@@ -82,6 +83,7 @@ export function saveSettings(
 
 export function clearSettings(): void {
   localStorage.removeItem(SETTINGS_KEY);
+  localStorage.removeItem(DICT_STORAGE_KEY);
 }
 
 export function parseExcludedCharset(excluded: string): Set<string> {

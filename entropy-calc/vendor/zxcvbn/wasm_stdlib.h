@@ -3,7 +3,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifndef NULL
 #define NULL ((void *)0)
+#endif
 
 #ifndef DBL_MAX
 #define DBL_MAX 1.7976931348623157e+308

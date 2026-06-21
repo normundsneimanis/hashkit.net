@@ -22,14 +22,13 @@ import {
 import {
   clearSettings,
   defaultSettings,
+  DICT_STORAGE_KEY,
   loadSettings,
   parseExcludedCharset,
   saveSettings,
   type SavedSettings,
 } from "./settings.js";
 import { cycleThemeMode, getThemeMode, initTheme } from "./theme.js";
-
-const DICT_STORAGE_KEY = "entropyCalcCustomWords";
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -233,7 +232,7 @@ export async function initApp(): Promise<void> {
     pop: ClassPopoverController,
     ent: EntropyApi | null,
     status: HTMLElement | null,
-    options?: { refreshPopover?: boolean },
+    options?: { refreshPopover?: boolean; persist?: boolean },
   ): void {
     let config = readConfig(pop);
     enforceLengthBounds(config);
@@ -244,7 +243,9 @@ export async function initApp(): Promise<void> {
     }
     updatePermutationsDisplay(config);
     doGenerate(pop, ent, status);
-    scheduleSave(pop);
+    if (options?.persist !== false) {
+      scheduleSave(pop);
+    }
   }
 
   function refreshUi(): void {
@@ -311,12 +312,26 @@ export async function initApp(): Promise<void> {
   });
 
   document.getElementById("reset-settings")?.addEventListener("click", () => {
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+      saveTimer = null;
+    }
     clearSettings();
     const defaults = defaultSettings();
     applySettingsToDom(defaults);
+    popover.setEnabledClasses(defaults.enabledClasses);
     popover.setExcludedSet(new Set());
     initTheme(defaults.theme);
-    applyConfigChange(popover, entropy, statusEl, { refreshPopover: true });
+    if (entropy) {
+      entropy.clear_words();
+      renderWordList(entropy);
+    }
+    const customWords = document.getElementById("custom-words") as HTMLTextAreaElement;
+    if (customWords) customWords.value = "";
+    applyConfigChange(popover, entropy, statusEl, {
+      refreshPopover: true,
+      persist: false,
+    });
   });
 
   applyConfigChange(popover, entropy, statusEl, { refreshPopover: true });
