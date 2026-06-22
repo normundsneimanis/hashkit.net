@@ -11,6 +11,7 @@ export const CharClass = {
   SPECIAL_CHARACTERS:
     (1 << 3) | (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7) | (1 << 8),
   EASCII: 1 << 9,
+  WHITESPACE: 1 << 10,
   DEFAULT_CHARSET: (1 << 0) | (1 << 1) | (1 << 2),
 } as const;
 

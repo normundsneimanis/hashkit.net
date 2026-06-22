@@ -5,4 +5,6 @@ _site/
 # Rust / WASM
 entropy-calc/target/
 entropy-calc/pkg/
+pass-hash/target/
+pass-hash/pkg/
 gen-pass-ts/tools/parity-ref/target/

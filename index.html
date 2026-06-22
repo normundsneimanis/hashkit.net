@@ -198,8 +198,23 @@
       white-space: nowrap;
     }
 
-    .stat-item[title] {
+    .stat-item[data-tooltip] {
       cursor: help;
+    }
+
+    .tooltip {
+      position: fixed;
+      z-index: 1000;
+      max-width: min(22rem, calc(100vw - 1rem));
+      padding: 0.45rem 0.65rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      font-size: 0.8rem;
+      line-height: 1.45;
+      box-shadow: 0 8px 24px var(--shadow);
+      pointer-events: none;
     }
 
     .page-footer {
@@ -518,6 +533,47 @@
       flex-wrap: wrap;
     }
 
+    .generate-actions {
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: nowrap;
+      gap: 1rem;
+      width: 100%;
+    }
+
+    .generate-actions button {
+      white-space: nowrap;
+    }
+
+    .batch-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .batch-actions-center {
+      flex: 1;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .batch-actions-center .batch-count-input,
+    #batch-count {
+      width: 4rem;
+      max-width: 4rem;
+      flex: 0 0 auto;
+      text-align: center;
+      padding: 0.55rem 0.35rem;
+    }
+
+    .batch-actions-center button {
+      flex-shrink: 0;
+    }
+
+    .batch-actions-end {
+      flex-shrink: 0;
+    }
+
     button {
       border: 1px solid var(--border);
       background: var(--btn-bg);
@@ -573,6 +629,103 @@
       gap: 0.75rem;
     }
 
+    .hash-section {
+      margin-top: 2rem;
+    }
+
+    .hash-section h2 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin: 0 0 0.75rem;
+    }
+
+    .hash-grid {
+      display: grid;
+      gap: 0.75rem;
+      grid-template-columns: 1fr;
+    }
+
+    .hash-grid > * {
+      grid-column: 1 / -1;
+    }
+
+    .hash-grid select,
+    .hash-grid input[type="text"],
+    #hash-params input {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .hash-output-row {
+      grid-column: 1 / -1;
+    }
+
+    .hash-output-row .password-field {
+      width: 100%;
+    }
+
+    #encoded-output {
+      width: 100%;
+    }
+
+    #hash-params {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    #hash-params label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    #hash-detect-info {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin: 0.35rem 0 0;
+    }
+
+    #hash-status {
+      margin-top: 0.5rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    #hash-example-hint {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin: 0.35rem 0 0;
+    }
+
+    #batch-encoded-output {
+      width: 100%;
+      box-sizing: border-box;
+      min-height: 8rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.85rem;
+      resize: vertical;
+    }
+
+    .batch-output-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .batch-count-input {
+      text-align: center;
+    }
+
+    #batch-status {
+      margin-top: 0.35rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
     @media (min-width: 900px) {
       .dict-grid {
         display: grid;
@@ -587,8 +740,8 @@
     <header class="page-header">
       <h1>Password Generator</h1>
       <div class="header-actions">
-        <button id="theme-toggle" class="chrome-btn" type="button" title="Theme: System" aria-label="Theme: System">◐</button>
-        <button id="reset-settings" class="chrome-btn" type="button" title="Reset settings">Reset</button>
+        <button id="theme-toggle" class="chrome-btn" type="button" data-tooltip="Theme: System" aria-label="Theme: System">◐</button>
+        <button id="reset-settings" class="chrome-btn" type="button" data-tooltip="Reset all generator settings to defaults">Reset</button>
       </div>
     </header>
 
@@ -608,9 +761,9 @@
             <div id="meter" class="meter-fill"></div>
           </div>
           <div class="entropy-stats">
-            <span id="quality-stat" class="stat-item" title="A simple strength rating (Bad → Excellent) based on the entropy estimate below.">—</span>
-            <span id="permutations-stat" class="stat-item" title="How many different passwords you could make with your current character choices and length. A bigger number means more possible combinations for someone to try.">—</span>
-            <span id="entropy-stat" class="stat-item" title="How strong this password looks against real-world guessing—not just its length, but also dictionary words and common patterns. Shown in bits; higher is stronger.">—</span>
+            <span id="quality-stat" class="stat-item" data-tooltip="A simple strength rating (Bad → Excellent) based on the entropy estimate below.">—</span>
+            <span id="permutations-stat" class="stat-item" data-tooltip="How many different passwords you could make with your current character choices and length. A bigger number means more possible combinations for someone to try.">—</span>
+            <span id="entropy-stat" class="stat-item" data-tooltip="How strong this password looks against real-world guessing—not just its length, but also dictionary words and common patterns. Shown in bits; higher is stronger.">—</span>
           </div>
         </div>
       </div>
@@ -639,8 +792,62 @@
         <input id="custom-charset" type="text" spellcheck="false" placeholder="Optional extra characters">
       </div>
 
-      <div class="actions">
+      <div class="actions generate-actions">
         <button id="generate" class="primary" type="button">Generate</button>
+        <div class="batch-actions batch-actions-center">
+          <input id="batch-count" class="batch-count-input" type="number" min="5" max="50" value="10" aria-label="Number of passwords to generate in batch">
+          <button id="generate-batch" type="button">Generate 10 passwords</button>
+        </div>
+        <div class="batch-actions batch-actions-end">
+          <button id="generate-batch-hashes" type="button">Generate 10 hashes</button>
+        </div>
+      </div>
+      <p id="batch-status" class="status"></p>
+    </section>
+
+    <section class="control-advanced hash-section">
+      <h2>Encode for storage</h2>
+      <p class="charset-summary">Hash the generated password for /etc/shadow, htpasswd, Django, or PHC strings. All hashing runs locally in your browser.</p>
+      <div class="hash-grid">
+        <div>
+          <label for="hash-detect-input">Detect algorithm (paste existing hash)</label>
+          <input id="hash-detect-input" type="text" spellcheck="false" placeholder="$argon2id$… or pbkdf2_sha256$…">
+          <p id="hash-detect-info"></p>
+        </div>
+        <div>
+          <label for="hash-algo">Algorithm</label>
+          <select id="hash-algo"></select>
+        </div>
+        <div id="hash-params" class="control-advanced"></div>
+        <div class="actions">
+          <button id="encode-password" type="button">Re-encode</button>
+        </div>
+        <p id="hash-status"></p>
+        <p id="hash-example-hint">Encoded output updates when you change algorithm, params, or generate a password.</p>
+        <div class="hash-output-row">
+          <label for="encoded-output">Encoded output</label>
+          <div class="password-field">
+            <input id="encoded-output" type="text" spellcheck="false" readonly placeholder="Select an algorithm and generate a password">
+            <button id="copy-encoded" class="icon-btn" type="button" aria-label="Copy encoded hash">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <rect x="6" y="6" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M4 12V4.5A1.5 1.5 0 015.5 3H12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="hash-output-row">
+          <div class="batch-output-header">
+            <label for="batch-encoded-output">Batch encoded output</label>
+            <button id="copy-batch-encoded" class="icon-btn" type="button" aria-label="Copy batch output">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <rect x="6" y="6" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M4 12V4.5A1.5 1.5 0 015.5 3H12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <textarea id="batch-encoded-output" readonly spellcheck="false" placeholder="Generate N passwords, then Generate N hashes to produce #password and encoded hash lines"></textarea>
+        </div>
       </div>
     </section>
 

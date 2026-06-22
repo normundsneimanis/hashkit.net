@@ -39,7 +39,7 @@
     "name": "custom-and-eascii",
     "config": {
       "length": 12,
-      "classes": 1031,
+      "classes": 7,
       "flags": 3,
       "customCharset": "++",
       "excludedCharset": ""

@@ -8,6 +8,12 @@ rm -rf "$ROOT/pkg/entropy-calc"
 mkdir -p "$ROOT/pkg/entropy-calc"
 cp -R "$ROOT/entropy-calc/pkg/." "$ROOT/pkg/entropy-calc/"
 
+# 1b. pass-hash WASM → pkg/pass-hash/
+(cd "$ROOT/pass-hash" && wasm-pack build --target web)
+rm -rf "$ROOT/pkg/pass-hash"
+mkdir -p "$ROOT/pkg/pass-hash"
+cp -R "$ROOT/pass-hash/pkg/." "$ROOT/pkg/pass-hash/"
+
 # 2. gen-pass-ts browser bundle → dist/app.js
 install_node_deps() {
   if [ -n "${CI:-}" ]; then

@@ -18,7 +18,7 @@
       "action": "groups",
       "config": {
         "length": 8,
-        "classes": 1031,
+        "classes": 7,
         "flags": 1,
         "custom_charset": "++",
         "excluded_charset": "0"

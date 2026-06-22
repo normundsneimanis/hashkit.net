@@ -14,6 +14,7 @@ export const CLASS_OPTIONS = [
   ["DASHES", "Dashes -/\\_|", CharClass.DASHES] as const,
   ["MATH", "Math !*+<=>?", CharClass.MATH] as const,
   ["LOGOGRAMS", "Logograms #$%&@^`~", CharClass.LOGOGRAMS] as const,
+  ["WHITESPACE", "Space", CharClass.WHITESPACE] as const,
   ["EASCII", "Extended ASCII", CharClass.EASCII] as const,
 ];
 

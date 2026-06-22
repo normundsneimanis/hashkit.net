@@ -29,6 +29,8 @@ import {
   type SavedSettings,
 } from "./settings.js";
 import { cycleThemeMode, getThemeMode, initTheme } from "./theme.js";
+import { initTooltips } from "./tooltip.js";
+import { loadPassHash, mountHashEncode, triggerHashPreview, encodeForBatch, formatBatchOutput, type PassHashApi } from "./hashEncode.js";
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -185,6 +187,7 @@ function doGenerate(
     if (output) output.value = "";
     if (entropy) emptyStrength(entropy.Quality);
     if (statusEl) statusEl.textContent = "Invalid password generator configuration.";
+    triggerHashPreview();
     return;
   }
 
@@ -196,9 +199,32 @@ function doGenerate(
       renderStrength(entropy.analyze_password(password), entropy.Quality);
     }
     if (statusEl) statusEl.textContent = "";
+    triggerHashPreview();
   } catch (error) {
     if (statusEl) statusEl.textContent = `Generation failed: ${error}`;
   }
+}
+
+function clampBatchCount(raw: number): number {
+  if (Number.isNaN(raw)) return 10;
+  return Math.min(50, Math.max(5, raw));
+}
+
+function updateBatchButtonLabel(): void {
+  const countInput = document.getElementById("batch-count") as HTMLInputElement | null;
+  const batchBtn = document.getElementById("generate-batch") as HTMLButtonElement | null;
+  const hashBtn = document.getElementById("generate-batch-hashes") as HTMLButtonElement | null;
+  if (!countInput || !batchBtn || !hashBtn) return;
+  const count = clampBatchCount(Number.parseInt(countInput.value, 10));
+  countInput.value = String(count);
+  batchBtn.textContent = `Generate ${count} passwords`;
+  hashBtn.textContent = `Generate ${count} hashes`;
+}
+
+function updateBatchHashButtonState(passHashReady: boolean): void {
+  const hashBtn = document.getElementById("generate-batch-hashes") as HTMLButtonElement | null;
+  if (!hashBtn) return;
+  hashBtn.disabled = !passHashReady;
 }
 
 export async function initApp(): Promise<void> {
@@ -213,8 +239,37 @@ export async function initApp(): Promise<void> {
   const saved = loadSettings() ?? defaultSettings();
   applySettingsToDom(saved);
   initTheme(saved.theme);
+  initTooltips();
 
   let entropy: EntropyApi | null = null;
+  let passHashApi: PassHashApi | null = null;
+  let batchPasswords: string[] = [];
+
+  const batchCountInput = document.getElementById("batch-count") as HTMLInputElement;
+  const batchBtn = document.getElementById("generate-batch") as HTMLButtonElement;
+  const batchHashBtn = document.getElementById("generate-batch-hashes") as HTMLButtonElement;
+  const batchStatus = document.getElementById("batch-status");
+  const batchOutput = document.getElementById("batch-encoded-output") as HTMLTextAreaElement;
+
+  updateBatchButtonLabel();
+  batchCountInput?.addEventListener("input", updateBatchButtonLabel);
+  batchCountInput?.addEventListener("change", updateBatchButtonLabel);
+
+  document.getElementById("copy-batch-encoded")?.addEventListener("click", async () => {
+    if (!batchOutput?.value) return;
+    const btn = document.getElementById("copy-batch-encoded") as HTMLButtonElement;
+    try {
+      await navigator.clipboard.writeText(batchOutput.value);
+      btn.classList.add("copied");
+      btn.setAttribute("aria-label", "Copied!");
+      setTimeout(() => {
+        btn.classList.remove("copied");
+        btn.setAttribute("aria-label", "Copy batch output");
+      }, 1500);
+    } catch {
+      /* clipboard unavailable */
+    }
+  });
 
   const popover = mountClassPopovers(
     classChecks,
@@ -227,6 +282,89 @@ export async function initApp(): Promise<void> {
       excludedSet: parseExcludedCharset(saved.excludedCharset),
     },
   );
+
+  batchBtn?.addEventListener("click", () => {
+    const config = readConfig(popover);
+    if (!isValid(config)) {
+      if (batchStatus) batchStatus.textContent = "Invalid password generator configuration.";
+      return;
+    }
+
+    const count = clampBatchCount(Number.parseInt(batchCountInput?.value ?? "10", 10));
+    if (batchCountInput) batchCountInput.value = String(count);
+    updateBatchButtonLabel();
+
+    batchBtn.disabled = true;
+    if (batchStatus) batchStatus.textContent = `Generating ${count} passwords…`;
+
+    try {
+      const passwords: string[] = [];
+      for (let i = 0; i < count; i += 1) {
+        passwords.push(generatePassword(config));
+      }
+      batchPasswords = passwords;
+      if (batchOutput) batchOutput.value = passwords.join("\n");
+      if (batchStatus) batchStatus.textContent = `Generated ${count} passwords.`;
+      updateBatchHashButtonState(passHashApi !== null);
+    } catch (error) {
+      if (batchStatus) batchStatus.textContent = `Batch failed: ${error}`;
+    } finally {
+      batchBtn.disabled = false;
+    }
+  });
+
+  batchHashBtn?.addEventListener("click", async () => {
+    if (!passHashApi) {
+      if (batchStatus) batchStatus.textContent = "Loading WASM modules…";
+      return;
+    }
+
+    const config = readConfig(popover);
+    if (!isValid(config)) {
+      if (batchStatus) batchStatus.textContent = "Invalid password generator configuration.";
+      return;
+    }
+
+    const count = clampBatchCount(Number.parseInt(batchCountInput?.value ?? "10", 10));
+    if (batchCountInput) batchCountInput.value = String(count);
+    updateBatchButtonLabel();
+
+    let passwords = batchPasswords;
+    if (passwords.length === 0) {
+      if (batchStatus) batchStatus.textContent = `Generating ${count} passwords…`;
+      passwords = [];
+      for (let i = 0; i < count; i += 1) {
+        passwords.push(generatePassword(config));
+      }
+      batchPasswords = passwords;
+    }
+
+    const total = passwords.length;
+    batchHashBtn.disabled = true;
+    if (batchStatus) batchStatus.textContent = `Encoding ${total} passwords…`;
+
+    try {
+      const entries: { plaintext: string; hash: string }[] = [];
+      for (let i = 0; i < total; i += 1) {
+        const password = passwords[i]!;
+        if (batchStatus) batchStatus.textContent = `Encoding ${i + 1}/${total}…`;
+        const result = await encodeForBatch(password, passHashApi);
+        if (!result.ok || !result.hash) {
+          if (batchStatus) {
+            batchStatus.textContent = result.error ?? `Encode failed at password ${i + 1}.`;
+          }
+          return;
+        }
+        entries.push({ plaintext: password, hash: result.hash });
+      }
+      if (batchOutput) batchOutput.value = formatBatchOutput(entries);
+      if (batchStatus) batchStatus.textContent = `Encoded ${total} passwords.`;
+    } catch (error) {
+      if (batchStatus) batchStatus.textContent = `Batch failed: ${error}`;
+    } finally {
+      updateBatchHashButtonState(passHashApi !== null);
+    }
+  });
 
   function applyConfigChange(
     pop: ClassPopoverController,
@@ -338,12 +476,22 @@ export async function initApp(): Promise<void> {
   generateBtn.disabled = false;
 
   try {
-    if (statusEl) statusEl.textContent = "Loading entropy WASM…";
+    if (statusEl) statusEl.textContent = "Loading WASM modules…";
     entropy = await loadEntropy();
     loadSavedWords(entropy);
-    applyConfigChange(popover, entropy, statusEl, { refreshPopover: false });
+    const passHash = await loadPassHash();
+    passHashApi = passHash;
+    mountHashEncode(passHash);
+    updateBatchHashButtonState(true);
+    updatePermutationsDisplay(readConfig(popover));
+    const generated = (document.getElementById("output") as HTMLInputElement)?.value ?? "";
+    if (generated && entropy) {
+      renderStrength(entropy.analyze_password(generated), entropy.Quality);
+    }
+    if (statusEl) statusEl.textContent = "";
+    scheduleSave(popover);
   } catch (error) {
-    if (statusEl) statusEl.textContent = `Failed to load entropy WASM: ${error}`;
+    if (statusEl) statusEl.textContent = `Failed to load WASM: ${error}`;
     console.error(error);
   }
 

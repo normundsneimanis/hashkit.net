@@ -64,6 +64,6 @@ export function updateThemeButtonLabel(): void {
     light: "Theme: Light",
     dark: "Theme: Dark",
   };
-  btn.setAttribute("title", labels[currentMode]);
+  btn.setAttribute("data-tooltip", labels[currentMode]);
   btn.setAttribute("aria-label", labels[currentMode]);
 }

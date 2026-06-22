@@ -102,6 +102,10 @@ export function passwordGroups(config: PasswordConfig): string[][] {
     groups.push(group);
   }
 
+  if (hasClass(config.classes, CharClass.WHITESPACE)) {
+    groups.push([" "]);
+  }
+
   if (config.customCharset.length > 0) {
     const group: string[] = [];
     for (const ch of config.customCharset) {

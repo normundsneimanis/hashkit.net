@@ -21,6 +21,7 @@ bitflags! {
             | Self::MATH.bits()
             | Self::LOGOGRAMS.bits();
         const EASCII = 1 << 9;
+        const WHITESPACE = 1 << 10;
         const DEFAULT_CHARSET = Self::LOWER_LETTERS.bits()
             | Self::UPPER_LETTERS.bits()
             | Self::NUMBERS.bits();
@@ -142,6 +143,10 @@ pub fn password_groups(config: &PasswordGeneratorConfig) -> Vec<PasswordGroup> {
             group.push(char::from_u32(code).unwrap());
         }
         groups.push(group);
+    }
+
+    if config.classes.contains(CharClass::WHITESPACE) {
+        groups.push(vec![' ']);
     }
 
     if !config.custom_charset.is_empty() {

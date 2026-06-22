@@ -103,6 +103,18 @@ describe("passwordGenerator", () => {
     const password = generatePasswordWith(config, sequentialRandomUint([3, 6, 9, 12, 15]));
     expect(password).toBe("dgjmp");
   });
+
+  it("whitespace class can emit a password containing space", () => {
+    const config = {
+      length: 2,
+      classes: CharClass.LOWER_LETTERS | CharClass.WHITESPACE,
+      flags: GeneratorFlag.CHAR_FROM_EVERY_GROUP,
+      customCharset: "",
+      excludedCharset: "",
+    };
+    const password = generatePasswordWith(config, sequentialRandomUint([0, 0]));
+    expect(password.includes(" ")).toBe(true);
+  });
 });
 
 describe("passwordGroups", () => {

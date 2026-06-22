@@ -1,0 +1,20 @@
+[
+  {
+    "algo": "argon2id",
+    "password": "password",
+    "options": { "m_cost": 19456, "t_cost": 2, "p_cost": 1, "salt": "c29tZXNhbHQ" },
+    "note": "Compare prefix and params with: echo -n password | argon2 somesalt -id -e -m 19 -t 2 -p 1"
+  },
+  {
+    "algo": "sha512crypt",
+    "password": "password",
+    "options": { "salt": "testsalt", "rounds": 5000 },
+    "note": "Compare with: mkpasswd -m sha-512 -s testsalt password"
+  },
+  {
+    "algo": "django_pbkdf2_sha256",
+    "password": "password",
+    "options": { "salt": "abcdefghijkl", "iterations": 1000 },
+    "note": "Compare with Django make_password using same salt and iterations"
+  }
+]
